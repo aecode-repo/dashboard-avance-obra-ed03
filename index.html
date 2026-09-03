@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="es"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Control de avance de obra</title>
+  <style>
+    :root{--bg:#f3f6f5;--surface:#fff;--ink:#16231f;--muted:#64746e;--line:#dce5e1;--emerald:#0b8f69;--emerald-soft:#e4f3ee;--slate:#4b5d58;--amber:#b86b08;--amber-bg:#fff7e8;--red:#c83737;--red-bg:#fff0f0;--shadow:0 8px 28px rgba(19,48,39,.07)}
+    *{box-sizing:border-box}
+    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px}
+    .shell{max-width:1540px;margin:auto;padding:34px 38px 42px}
+    header{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:26px}
+    h1{margin:0 0 6px;font-size:clamp(26px,2.6vw,42px);line-height:1.08;letter-spacing:-.035em}
+    .subtitle{margin:0;color:var(--muted);font-size:17px}
+    .filters{display:flex;padding:4px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+    button{border:0;border-radius:7px;padding:11px 17px;background:transparent;color:var(--slate);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:.18s ease}
+    button:hover{background:#eef3f1} button.active{background:var(--emerald);color:#fff}
+    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:20px}
+    .metric{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow)}
+    .metric-label{color:var(--muted);font-size:14px;font-weight:750;text-transform:uppercase;letter-spacing:.07em}
+    .metric-value{font-size:clamp(32px,3vw,48px);font-weight:800;line-height:1;margin-top:12px;letter-spacing:-.04em}
+    .metric-value small{font-size:.42em;color:var(--muted);letter-spacing:0}
+    .metric.executed{border-top:4px solid var(--emerald)} .metric.gap{border-top:4px solid var(--amber)}
+    .workspace{display:grid;grid-template-columns:minmax(620px,1.12fr) minmax(450px,.88fr);gap:20px}
+    .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
+    .panel-head{display:flex;align-items:center;justify-content:space-between;padding:21px 23px 17px;border-bottom:1px solid var(--line)}
+    h2{margin:0;font-size:19px;letter-spacing:-.015em}.count{font-size:13px;color:var(--muted);font-weight:650}
+    .table-wrap{overflow-x:auto} table{width:100%;border-collapse:collapse;min-width:650px}
+    th{padding:13px 16px;text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line)}
+    th.num,td.num{text-align:right} td{padding:16px;border-bottom:1px solid #edf1ef;vertical-align:middle} tbody tr:last-child td{border-bottom:0}
+    tbody tr.warning{background:var(--amber-bg)} tbody tr.critical{background:var(--red-bg)}
+    .item-name{font-weight:710}.progress{width:145px;height:9px;background:#dce6e2;border-radius:20px;overflow:hidden}.progress-fill{height:100%;background:var(--emerald);border-radius:20px}
+    .gap-label{display:inline-block;min-width:48px;padding:4px 7px;border-radius:6px;text-align:center;font-weight:800;font-size:13px;color:var(--slate);background:#edf2f0}
+    tr.warning .gap-label{color:var(--amber);background:#ffe8bd} tr.critical .gap-label{color:var(--red);background:#ffd8d8}
+    .chart{padding:24px 25px 21px}.legend{display:flex;gap:22px;margin-bottom:22px;color:var(--muted);font-size:13px;font-weight:650}
+    .legend span{display:flex;align-items:center;gap:8px}.key{width:18px;height:7px;border-radius:4px;background:var(--slate)}.key.actual{background:var(--emerald)}
+    .chart-rows{display:flex;flex-direction:column;gap:17px}.chart-row{display:grid;grid-template-columns:minmax(145px,1fr) 2.1fr;gap:14px;align-items:center}
+    .chart-label{font-size:13px;font-weight:680;line-height:1.25}.tracks{display:grid;gap:5px}.track{height:13px;background:#edf2f0;border-radius:3px;position:relative;overflow:visible}.bar{height:100%;border-radius:3px;background:var(--slate);min-width:1px}.bar.actual{background:var(--emerald)}
+    .bar-value{position:absolute;top:-1px;font-size:10px;font-weight:800;color:#fff}.bar-value.outside{color:var(--slate)}
+    .empty{padding:52px 24px;text-align:center;color:var(--muted)}
+    footer{margin-top:14px;text-align:right;color:var(--muted);font-size:12px}
+    @media(max-width:1020px){.workspace{grid-template-columns:1fr}.shell{padding:26px 22px}.chart-row{grid-template-columns:190px 1fr}}
+    @media(max-width:680px){header{align-items:flex-start;flex-direction:column}.metrics{grid-template-columns:1fr}.shell{padding:20px 14px}.chart-row{grid-template-columns:115px 1fr}.chart{padding:20px 16px}}
+  </style>
+</head>
+<body>
+  <main class="shell">
+    <header>
+      <div><h1>Control de avance de obra</h1><p class="subtitle">Seguimiento físico de partidas de edificación</p></div>
+      <nav class="filters" aria-label="Filtrar partidas">
+        <button class="active" data-filter="all" aria-pressed="true">Todas</button>
+        <button data-filter="delayed" aria-pressed="false">Solo atrasadas</button>
+      </nav>
+    </header>
+    <section class="metrics" aria-label="Resumen de avance">
+      <article class="metric"><div class="metric-label">Avance programado total</div><div class="metric-value" id="plannedTotal">64.4<small>%</small></div></article>
+      <article class="metric executed"><div class="metric-label">Avance ejecutado total</div><div class="metric-value" id="actualTotal">51.8<small>%</small></div></article>
+      <article class="metric gap"><div class="metric-label">Brecha</div><div class="metric-value" id="gapTotal">12.6<small> pp</small></div></article>
+    </section>
+    <section class="workspace">
+      <article class="panel">
+        <div class="panel-head"><h2>Avance por partida</h2><span class="count" id="rowCount">8 partidas</span></div>
+        <div class="table-wrap"><table><thead><tr><th>Partida</th><th>Progreso ejecutado</th><th class="num">Prog.</th><th class="num">Ejec.</th><th class="num">Brecha</th></tr></thead><tbody id="tableBody"><tr class=""><td class="item-name">Obras provisionales</td><td><div class="progress" aria-label="100% ejecutado"><div class="progress-fill" style="width:100%"></div></div></td><td class="num">100%</td><td class="num"><strong>100%</strong></td><td class="num"><span class="gap-label">0 pp</span></td></tr><tr class=""><td class="item-name">Movimiento de tierras</td><td><div class="progress" aria-label="96% ejecutado"><div class="progress-fill" style="width:96%"></div></div></td><td class="num">100%</td><td class="num"><strong>96%</strong></td><td class="num"><span class="gap-label">4 pp</span></td></tr><tr class="warning"><td class="item-name">Concreto en zapatas</td><td><div class="progress" aria-label="88% ejecutado"><div class="progress-fill" style="width:88%"></div></div></td><td class="num">100%</td><td class="num"><strong>88%</strong></td><td class="num"><span class="gap-label">12 pp</span></td></tr><tr class="warning"><td class="item-name">Concreto en columnas</td><td><div class="progress" aria-label="61% ejecutado"><div class="progress-fill" style="width:61%"></div></div></td><td class="num">80%</td><td class="num"><strong>61%</strong></td><td class="num"><span class="gap-label">19 pp</span></td></tr><tr class="critical"><td class="item-name">Concreto en vigas y losas</td><td><div class="progress" aria-label="30% ejecutado"><div class="progress-fill" style="width:30%"></div></div></td><td class="num">55%</td><td class="num"><strong>30%</strong></td><td class="num"><span class="gap-label">25 pp</span></td></tr><tr class="warning"><td class="item-name">Albanileria</td><td><div class="progress" aria-label="12% ejecutado"><div class="progress-fill" style="width:12%"></div></div></td><td class="num">30%</td><td class="num"><strong>12%</strong></td><td class="num"><span class="gap-label">18 pp</span></td></tr><tr class=""><td class="item-name">Instalaciones sanitarias</td><td><div class="progress" aria-label="18% ejecutado"><div class="progress-fill" style="width:18%"></div></div></td><td class="num">25%</td><td class="num"><strong>18%</strong></td><td class="num"><span class="gap-label">7 pp</span></td></tr><tr class="warning"><td class="item-name">Instalaciones electricas</td><td><div class="progress" aria-label="9% ejecutado"><div class="progress-fill" style="width:9%"></div></div></td><td class="num">25%</td><td class="num"><strong>9%</strong></td><td class="num"><span class="gap-label">16 pp</span></td></tr></tbody></table></div>
+      </article>
+      <article class="panel">
+        <div class="panel-head"><h2>Programado vs. ejecutado</h2><span class="count">Porcentaje (%)</span></div>
+        <div class="chart"><div class="legend"><span><i class="key"></i> Programado</span><span><i class="key actual"></i> Ejecutado</span></div><div class="chart-rows" id="chartRows"><div class="chart-row"><div class="chart-label">Obras provisionales</div><div class="tracks"><div class="track"><div class="bar" style="width:100%"></div><span class="bar-value " style="left:calc(100% - 28px)">100%</span></div><div class="track"><div class="bar actual" style="width:100%"></div><span class="bar-value " style="left:calc(100% - 28px)">100%</span></div></div></div><div class="chart-row"><div class="chart-label">Movimiento de tierras</div><div class="tracks"><div class="track"><div class="bar" style="width:100%"></div><span class="bar-value " style="left:calc(100% - 28px)">100%</span></div><div class="track"><div class="bar actual" style="width:96%"></div><span class="bar-value " style="left:calc(96% - 28px)">96%</span></div></div></div><div class="chart-row"><div class="chart-label">Concreto en zapatas</div><div class="tracks"><div class="track"><div class="bar" style="width:100%"></div><span class="bar-value " style="left:calc(100% - 28px)">100%</span></div><div class="track"><div class="bar actual" style="width:88%"></div><span class="bar-value " style="left:calc(88% - 28px)">88%</span></div></div></div><div class="chart-row"><div class="chart-label">Concreto en columnas</div><div class="tracks"><div class="track"><div class="bar" style="width:80%"></div><span class="bar-value " style="left:calc(80% - 28px)">80%</span></div><div class="track"><div class="bar actual" style="width:61%"></div><span class="bar-value " style="left:calc(61% - 28px)">61%</span></div></div></div><div class="chart-row"><div class="chart-label">Concreto en vigas y losas</div><div class="tracks"><div class="track"><div class="bar" style="width:55%"></div><span class="bar-value " style="left:calc(55% - 28px)">55%</span></div><div class="track"><div class="bar actual" style="width:30%"></div><span class="bar-value " style="left:calc(30% - 28px)">30%</span></div></div></div><div class="chart-row"><div class="chart-label">Albanileria</div><div class="tracks"><div class="track"><div class="bar" style="width:30%"></div><span class="bar-value " style="left:calc(30% - 28px)">30%</span></div><div class="track"><div class="bar actual" style="width:12%"></div><span class="bar-value outside" style="left:calc(12% + 6px)">12%</span></div></div></div><div class="chart-row"><div class="chart-label">Instalaciones sanitarias</div><div class="tracks"><div class="track"><div class="bar" style="width:25%"></div><span class="bar-value " style="left:calc(25% - 28px)">25%</span></div><div class="track"><div class="bar actual" style="width:18%"></div><span class="bar-value " style="left:calc(18% - 28px)">18%</span></div></div></div><div class="chart-row"><div class="chart-label">Instalaciones electricas</div><div class="tracks"><div class="track"><div class="bar" style="width:25%"></div><span class="bar-value " style="left:calc(25% - 28px)">25%</span></div><div class="track"><div class="bar actual" style="width:9%"></div><span class="bar-value outside" style="left:calc(9% + 6px)">9%</span></div></div></div></div></div>
+      </article>
+    </section>
+    <footer>Brecha = avance programado − avance ejecutado</footer>
+  </main>
+  <script>
+    const data = [
+      {name:'Obras provisionales', planned:100, actual:100},
+      {name:'Movimiento de tierras', planned:100, actual:96},
+      {name:'Concreto en zapatas', planned:100, actual:88},
+      {name:'Concreto en columnas', planned:80, actual:61},
+      {name:'Concreto en vigas y losas', planned:55, actual:30},
+      {name:'Albanileria', planned:30, actual:12},
+      {name:'Instalaciones sanitarias', planned:25, actual:18},
+      {name:'Instalaciones electricas', planned:25, actual:9}
+    ];
+    const average = key => data.reduce((sum,item)=>sum+item[key],0)/data.length;
+    const fmt = value => `${value.toFixed(1)}<small>%</small>`;
+    const plannedAvg=average('planned'), actualAvg=average('actual');
+    document.getElementById('plannedTotal').innerHTML=fmt(plannedAvg);
+    document.getElementById('actualTotal').innerHTML=fmt(actualAvg);
+    document.getElementById('gapTotal').innerHTML=`${(plannedAvg-actualAvg).toFixed(1)}<small> pp</small>`;
+    const tableBody=document.getElementById('tableBody'), chartRows=document.getElementById('chartRows'), rowCount=document.getElementById('rowCount');
+    const statusClass=gap=>gap>20?'critical':gap>10?'warning':'';
+    function valueLabel(v){return `<span class="bar-value ${v<16?'outside':''}" style="left:${v<16?`calc(${v}% + 6px)`:`calc(${v}% - 28px)`}">${v}%</span>`}
+    function render(filter='all'){
+      const rows=data.filter(item=>filter==='all'||item.actual<item.planned);
+      rowCount.textContent=`${rows.length} ${rows.length===1?'partida':'partidas'}`;
+      tableBody.innerHTML=rows.map(item=>{const gap=item.planned-item.actual;return `<tr class="${statusClass(gap)}"><td class="item-name">${item.name}</td><td><div class="progress" aria-label="${item.actual}% ejecutado"><div class="progress-fill" style="width:${item.actual}%"></div></div></td><td class="num">${item.planned}%</td><td class="num"><strong>${item.actual}%</strong></td><td class="num"><span class="gap-label">${gap} pp</span></td></tr>`}).join('');
+      chartRows.innerHTML=rows.length?rows.map(item=>`<div class="chart-row"><div class="chart-label">${item.name}</div><div class="tracks"><div class="track"><div class="bar" style="width:${item.planned}%"></div>${valueLabel(item.planned)}</div><div class="track"><div class="bar actual" style="width:${item.actual}%"></div>${valueLabel(item.actual)}</div></div></div>`).join(''):'<div class="empty">No hay partidas atrasadas.</div>';
+    }
+    document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',b===button)});render(button.dataset.filter)}));
+    render();
+  </script>
+
+</body></html>
