@@ -1,101 +1,575 @@
-<!DOCTYPE html>
-<html lang="es"><head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Control de avance de obra</title>
-  <style>
-    :root{--bg:#f3f6f5;--surface:#fff;--ink:#16231f;--muted:#64746e;--line:#dce5e1;--emerald:#0b8f69;--emerald-soft:#e4f3ee;--slate:#4b5d58;--amber:#b86b08;--amber-bg:#fff7e8;--red:#c83737;--red-bg:#fff0f0;--shadow:0 8px 28px rgba(19,48,39,.07)}
-    *{box-sizing:border-box}
-    body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px}
-    .shell{max-width:1540px;margin:auto;padding:34px 38px 42px}
-    header{display:flex;justify-content:space-between;align-items:end;gap:24px;margin-bottom:26px}
-    h1{margin:0 0 6px;font-size:clamp(26px,2.6vw,42px);line-height:1.08;letter-spacing:-.035em}
-    .subtitle{margin:0;color:var(--muted);font-size:17px}
-    .filters{display:flex;padding:4px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
-    button{border:0;border-radius:7px;padding:11px 17px;background:transparent;color:var(--slate);font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;transition:.18s ease}
-    button:hover{background:#eef3f1} button.active{background:var(--emerald);color:#fff}
-    .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:20px}
-    .metric{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:22px 24px;box-shadow:var(--shadow)}
-    .metric-label{color:var(--muted);font-size:14px;font-weight:750;text-transform:uppercase;letter-spacing:.07em}
-    .metric-value{font-size:clamp(32px,3vw,48px);font-weight:800;line-height:1;margin-top:12px;letter-spacing:-.04em}
-    .metric-value small{font-size:.42em;color:var(--muted);letter-spacing:0}
-    .metric.executed{border-top:4px solid var(--emerald)} .metric.gap{border-top:4px solid var(--amber)}
-    .workspace{display:grid;grid-template-columns:minmax(620px,1.12fr) minmax(450px,.88fr);gap:20px}
-    .panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
-    .panel-head{display:flex;align-items:center;justify-content:space-between;padding:21px 23px 17px;border-bottom:1px solid var(--line)}
-    h2{margin:0;font-size:19px;letter-spacing:-.015em}.count{font-size:13px;color:var(--muted);font-weight:650}
-    .table-wrap{overflow-x:auto} table{width:100%;border-collapse:collapse;min-width:650px}
-    th{padding:13px 16px;text-align:left;color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:.06em;border-bottom:1px solid var(--line)}
-    th.num,td.num{text-align:right} td{padding:16px;border-bottom:1px solid #edf1ef;vertical-align:middle} tbody tr:last-child td{border-bottom:0}
-    tbody tr.warning{background:var(--amber-bg)} tbody tr.critical{background:var(--red-bg)}
-    .item-name{font-weight:710}.progress{width:145px;height:9px;background:#dce6e2;border-radius:20px;overflow:hidden}.progress-fill{height:100%;background:var(--emerald);border-radius:20px}
-    .gap-label{display:inline-block;min-width:48px;padding:4px 7px;border-radius:6px;text-align:center;font-weight:800;font-size:13px;color:var(--slate);background:#edf2f0}
-    tr.warning .gap-label{color:var(--amber);background:#ffe8bd} tr.critical .gap-label{color:var(--red);background:#ffd8d8}
-    .chart{padding:24px 25px 21px}.legend{display:flex;gap:22px;margin-bottom:22px;color:var(--muted);font-size:13px;font-weight:650}
-    .legend span{display:flex;align-items:center;gap:8px}.key{width:18px;height:7px;border-radius:4px;background:var(--slate)}.key.actual{background:var(--emerald)}
-    .chart-rows{display:flex;flex-direction:column;gap:17px}.chart-row{display:grid;grid-template-columns:minmax(145px,1fr) 2.1fr;gap:14px;align-items:center}
-    .chart-label{font-size:13px;font-weight:680;line-height:1.25}.tracks{display:grid;gap:5px}.track{height:13px;background:#edf2f0;border-radius:3px;position:relative;overflow:visible}.bar{height:100%;border-radius:3px;background:var(--slate);min-width:1px}.bar.actual{background:var(--emerald)}
-    .bar-value{position:absolute;top:-1px;font-size:10px;font-weight:800;color:#fff}.bar-value.outside{color:var(--slate)}
-    .empty{padding:52px 24px;text-align:center;color:var(--muted)}
-    footer{margin-top:14px;text-align:right;color:var(--muted);font-size:12px}
-    @media(max-width:1020px){.workspace{grid-template-columns:1fr}.shell{padding:26px 22px}.chart-row{grid-template-columns:190px 1fr}}
-    @media(max-width:680px){header{align-items:flex-start;flex-direction:column}.metrics{grid-template-columns:1fr}.shell{padding:20px 14px}.chart-row{grid-template-columns:115px 1fr}.chart{padding:20px 16px}}
-  </style>
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Control semanal de obra — Centro de Salud San Marcos</title>
+<style>
+:root{
+  --bg:#f2f6f5;--card:#fff;--ink:#152220;--ink2:#2c3d39;--muted:#63736f;--faint:#8a9a96;
+  --line:#dde7e4;--line2:#eef3f2;
+  --green:#087f5b;--green2:#21a179;--greenbg:#eaf7f2;
+  --slate:#5a6b74;
+  --amber:#b26a00;--amberbg:#fff8e8;--amberline:#e0a419;
+  --red:#b03123;--redbg:#fdf0ee;--redline:#c9483a;
+  --blue:#1d5f8a;
+  --shadow:0 1px 2px rgba(21,52,45,.04),0 8px 24px rgba(21,52,45,.06);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;
+  font-variant-numeric:tabular-nums;-webkit-font-smoothing:antialiased}
+.app{max-width:1660px;margin:auto;padding:26px 26px 40px}
+
+/* cabecera */
+.top{display:flex;align-items:flex-start;justify-content:space-between;gap:28px;margin-bottom:20px;flex-wrap:wrap}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.16em;color:var(--green);text-transform:uppercase}
+.top h1{font-size:clamp(24px,2.1vw,34px);margin:7px 0 10px;letter-spacing:-.03em;line-height:1.1}
+.meta{display:flex;flex-wrap:wrap;gap:6px 8px}
+.chip{font-size:12px;color:var(--muted);background:#fff;border:1px solid var(--line);border-radius:999px;padding:4px 11px}
+.chip b{color:var(--ink);font-weight:700}
+
+.semaforo{display:flex;align-items:center;gap:14px;border-radius:14px;padding:14px 18px;
+  border:1px solid var(--redline);background:var(--redbg);min-width:340px;box-shadow:var(--shadow)}
+.semaforo .luz{width:14px;height:14px;border-radius:50%;background:var(--redline);flex:none;
+  box-shadow:0 0 0 5px rgba(201,72,58,.16)}
+.semaforo .est{font-size:19px;font-weight:800;letter-spacing:-.02em;color:var(--red);line-height:1.1}
+.semaforo .por{font-size:11.5px;color:#7d4034;margin-top:5px;line-height:1.45;max-width:300px}
+.semaforo.riesgo{border-color:var(--amberline);background:var(--amberbg)}
+.semaforo.riesgo .luz{background:var(--amberline);box-shadow:0 0 0 5px rgba(224,164,25,.18)}
+.semaforo.riesgo .est{color:var(--amber)} .semaforo.riesgo .por{color:#7a5510}
+.semaforo.plazo{border-color:#9fd3c0;background:var(--greenbg)}
+.semaforo.plazo .luz{background:var(--green2);box-shadow:0 0 0 5px rgba(33,161,121,.18)}
+.semaforo.plazo .est{color:var(--green)} .semaforo.plazo .por{color:#3d6459}
+
+/* filtros */
+.filters{display:flex;gap:8px;margin:0 0 15px;flex-wrap:wrap;align-items:center}
+.filter{border:1px solid var(--line);background:#fff;color:var(--ink2);padding:9px 15px;
+  border-radius:8px;font-weight:700;font-size:13px;cursor:pointer;font-family:inherit}
+.filter:hover{border-color:#a9c6bd}
+.filter.active{background:var(--green);border-color:var(--green);color:#fff}
+.filter:focus-visible{outline:3px solid #84d6bd;outline-offset:2px}
+.filter-note{font-size:12px;color:var(--faint);margin-left:6px}
+
+/* tarjetas */
+.cards{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:15px 16px;
+  box-shadow:var(--shadow);display:flex;flex-direction:column;min-height:126px}
+.card .label{font-size:10.5px;text-transform:uppercase;letter-spacing:.09em;font-weight:800;color:var(--muted);line-height:1.3}
+.card .value{font-size:clamp(22px,1.75vw,29px);font-weight:800;letter-spacing:-.035em;margin-top:auto;padding-top:12px}
+.card .detail{font-size:10.5px;color:var(--faint);margin-top:5px;line-height:1.4}
+.card.bad{border-color:#eec4bd;background:linear-gradient(180deg,#fdf3f1,#fff 55%)}
+.card.bad .value{color:var(--red)}
+.card.good .value{color:var(--green)}
+.card.info .value{color:var(--blue)}
+
+/* paneles */
+.panel{background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.panel-head{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;
+  justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap}
+.panel-title{font-size:15px;font-weight:800;letter-spacing:-.01em}
+.panel-sub{font-size:11.5px;color:var(--faint)}
+
+/* tabla */
+.table-wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12px;min-width:1320px}
+thead th{background:#eef3f1;color:#46564f;text-align:left;font-size:9.5px;text-transform:uppercase;
+  letter-spacing:.06em;font-weight:800;padding:10px 9px;border-bottom:1px solid #cfdcd8;white-space:nowrap}
+thead th.num{text-align:right}
+tbody td{padding:11px 9px;border-bottom:1px solid var(--line2);vertical-align:top;line-height:1.35}
+tbody tr.amber{background:var(--amberbg)}
+tbody tr.red{background:var(--redbg)}
+tbody tr.amber td:first-child{box-shadow:inset 4px 0 var(--amberline)}
+tbody tr.red td:first-child{box-shadow:inset 4px 0 var(--redline)}
+tbody tr.pend td{color:var(--faint)}
+tbody tr.pend td:first-child{box-shadow:inset 4px 0 #cfdcd8}
+tbody tr.pend .name{color:var(--muted)}
+.name{font-weight:800;min-width:160px;color:var(--ink)}
+.tag{display:inline-block;margin-top:5px;padding:2.5px 6px;border-radius:4px;font-size:8.5px;letter-spacing:.08em;font-weight:800}
+.tag.crit{background:#22343e;color:#fff}
+.tag.espera{background:#e7eeec;color:#5d6f6a}
+.num{text-align:right;white-space:nowrap}
+.big{font-weight:800;font-size:12.5px}
+.sub{font-size:10.5px;color:var(--faint);margin-top:3px;font-weight:600}
+.pos{color:var(--red);font-weight:800}
+.neg{color:var(--green);font-weight:800}
+.zero{color:var(--faint);font-weight:700}
+.dash{color:#b6c4c0;font-weight:700}
+.bar{height:5px;width:92px;background:#dfe9e6;border-radius:10px;overflow:hidden;margin:6px 0 0 auto}
+.bar i{display:block;height:100%;background:var(--green2)}
+.bar i.late{background:var(--amberline)}
+.bar i.crit{background:var(--redline)}
+.bar i.espera{background:#b4c4bf}
+.cause{min-width:190px;max-width:250px;color:#4e5f5a;font-size:11.5px}
+tfoot td{padding:13px 9px;border-top:2px solid #c2d2cd;background:#f6faf9;font-weight:800;font-size:12.5px}
+tfoot td .sub{font-weight:600}
+.empty{padding:44px;text-align:center;color:var(--muted)}
+
+/* grilla inferior */
+.grid3{display:grid;grid-template-columns:1.35fr 1fr 1fr;gap:16px;align-items:start}
+.grid3 .panel{margin-bottom:0}
+.box{padding:18px}
+.legend{display:flex;gap:16px;font-size:11.5px;color:var(--muted);margin-bottom:12px;flex-wrap:wrap}
+.key{display:flex;align-items:center;gap:7px}
+.swatch{width:22px;height:3px;background:var(--slate);border-radius:2px}
+.swatch.act{background:var(--green)}
+.swatch.pry{background:transparent;border-top:3px dashed var(--green2)}
+svg{width:100%;height:auto;display:block}
+.grid-l{stroke:#e9efee;stroke-width:1}
+.axis{stroke:#c3d0cc;stroke-width:1}
+.l-plan{fill:none;stroke:var(--slate);stroke-width:2.6}
+.l-act{fill:none;stroke:var(--green);stroke-width:3.4;stroke-linecap:round}
+.l-pry{fill:none;stroke:var(--green2);stroke-width:2.6;stroke-dasharray:6 5}
+.cutline{stroke:var(--redline);stroke-width:1.4;stroke-dasharray:4 4}
+.st{font:10.5px "Segoe UI",Arial,sans-serif;fill:#75857f}
+.st.b{font-weight:800;fill:#4a5b56}
+
+.imp{display:flex;flex-direction:column;gap:15px}
+.imp-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.imp-row .n{font-weight:800;font-size:12.5px}
+.imp-row .s{font-size:11px;color:var(--faint);margin-top:2px}
+.imp-row .v{font-weight:800;font-size:13px;color:var(--red);white-space:nowrap}
+.imp-bar{height:9px;background:#eef3f2;border-radius:6px;overflow:hidden;margin-top:8px}
+.imp-bar i{display:block;height:100%;background:linear-gradient(90deg,#d9705f,#b03123)}
+
+.kv{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-bottom:1px solid var(--line2);font-size:12.5px}
+.kv span{color:var(--muted)} .kv b{font-weight:800;white-space:nowrap}
+.kv b.red{color:var(--red)} .kv b.grn{color:var(--green)}
+.progress{height:10px;background:#eef3f2;border-radius:6px;overflow:hidden;margin:12px 0 6px}
+.progress i{display:block;height:100%;background:var(--green2)}
+.note{font-size:11px;line-height:1.55;color:var(--muted);margin-top:14px;padding:11px 12px;
+  background:#f7faf9;border-left:3px solid #c6dad3;border-radius:0 7px 7px 0}
+.note b{color:var(--ink2)}
+.note.warn{background:var(--amberbg);border-left-color:var(--amberline);color:#7a5510}
+.note.warn b{color:#5e4109}
+
+@media(max-width:1280px){.cards{grid-template-columns:repeat(3,1fr)}.grid3{grid-template-columns:1fr}}
+@media(max-width:700px){.app{padding:16px}.cards{grid-template-columns:repeat(2,1fr)}.semaforo{min-width:0}}
+@media print{
+  body{background:#fff}.app{padding:0;max-width:none}.filters{display:none}
+  .panel,.card,.semaforo{box-shadow:none}.table-wrap{overflow:visible}
+  table{min-width:0;font-size:8.5px}.grid3{grid-template-columns:1.2fr 1fr 1fr}
+}
+</style>
 </head>
 <body>
-  <main class="shell">
-    <header>
-      <div><h1>Control de avance de obra</h1><p class="subtitle">Seguimiento físico de partidas de edificación</p></div>
-      <nav class="filters" aria-label="Filtrar partidas">
-        <button class="active" data-filter="all" aria-pressed="true">Todas</button>
-        <button data-filter="delayed" aria-pressed="false">Solo atrasadas</button>
-      </nav>
-    </header>
-    <section class="metrics" aria-label="Resumen de avance">
-      <article class="metric"><div class="metric-label">Avance programado total</div><div class="metric-value" id="plannedTotal">64.4<small>%</small></div></article>
-      <article class="metric executed"><div class="metric-label">Avance ejecutado total</div><div class="metric-value" id="actualTotal">51.8<small>%</small></div></article>
-      <article class="metric gap"><div class="metric-label">Brecha</div><div class="metric-value" id="gapTotal">12.6<small> pp</small></div></article>
-    </section>
-    <section class="workspace">
-      <article class="panel">
-        <div class="panel-head"><h2>Avance por partida</h2><span class="count" id="rowCount">8 partidas</span></div>
-        <div class="table-wrap"><table><thead><tr><th>Partida</th><th>Progreso ejecutado</th><th class="num">Prog.</th><th class="num">Ejec.</th><th class="num">Brecha</th></tr></thead><tbody id="tableBody"><tr class=""><td class="item-name">Obras provisionales</td><td><div class="progress" aria-label="100% ejecutado"><div class="progress-fill" style="width:100%"></div></div></td><td class="num">100%</td><td class="num"><strong>100%</strong></td><td class="num"><span class="gap-label">0 pp</span></td></tr><tr class=""><td class="item-name">Movimiento de tierras</td><td><div class="progress" aria-label="96% ejecutado"><div class="progress-fill" style="width:96%"></div></div></td><td class="num">100%</td><td class="num"><strong>96%</strong></td><td class="num"><span class="gap-label">4 pp</span></td></tr><tr class="warning"><td class="item-name">Concreto en zapatas</td><td><div class="progress" aria-label="88% ejecutado"><div class="progress-fill" style="width:88%"></div></div></td><td class="num">100%</td><td class="num"><strong>88%</strong></td><td class="num"><span class="gap-label">12 pp</span></td></tr><tr class="warning"><td class="item-name">Concreto en columnas</td><td><div class="progress" aria-label="61% ejecutado"><div class="progress-fill" style="width:61%"></div></div></td><td class="num">80%</td><td class="num"><strong>61%</strong></td><td class="num"><span class="gap-label">19 pp</span></td></tr><tr class="critical"><td class="item-name">Concreto en vigas y losas</td><td><div class="progress" aria-label="30% ejecutado"><div class="progress-fill" style="width:30%"></div></div></td><td class="num">55%</td><td class="num"><strong>30%</strong></td><td class="num"><span class="gap-label">25 pp</span></td></tr><tr class="warning"><td class="item-name">Albanileria</td><td><div class="progress" aria-label="12% ejecutado"><div class="progress-fill" style="width:12%"></div></div></td><td class="num">30%</td><td class="num"><strong>12%</strong></td><td class="num"><span class="gap-label">18 pp</span></td></tr><tr class=""><td class="item-name">Instalaciones sanitarias</td><td><div class="progress" aria-label="18% ejecutado"><div class="progress-fill" style="width:18%"></div></div></td><td class="num">25%</td><td class="num"><strong>18%</strong></td><td class="num"><span class="gap-label">7 pp</span></td></tr><tr class="warning"><td class="item-name">Instalaciones electricas</td><td><div class="progress" aria-label="9% ejecutado"><div class="progress-fill" style="width:9%"></div></div></td><td class="num">25%</td><td class="num"><strong>9%</strong></td><td class="num"><span class="gap-label">16 pp</span></td></tr></tbody></table></div>
-      </article>
-      <article class="panel">
-        <div class="panel-head"><h2>Programado vs. ejecutado</h2><span class="count">Porcentaje (%)</span></div>
-        <div class="chart"><div class="legend"><span><i class="key"></i> Programado</span><span><i class="key actual"></i> Ejecutado</span></div><div class="chart-rows" id="chartRows"><div class="chart-row"><div class="chart-label">Obras provisionales</div><div class="tracks"><div class="track"><div class="bar" style="width:100%"></div><span class="bar-value " style="left:calc(100% - 28px)">100%</span></div><div class="track"><div class="bar actual" style="width:100%"></div><span class="bar-value " style="left:calc(100% - 28px)">100%</span></div></div></div><div class="chart-row"><div class="chart-label">Movimiento de tierras</div><div class="tracks"><div class="track"><div class="bar" style="width:100%"></div><span class="bar-value " style="left:calc(100% - 28px)">100%</span></div><div class="track"><div class="bar actual" style="width:96%"></div><span class="bar-value " style="left:calc(96% - 28px)">96%</span></div></div></div><div class="chart-row"><div class="chart-label">Concreto en zapatas</div><div class="tracks"><div class="track"><div class="bar" style="width:100%"></div><span class="bar-value " style="left:calc(100% - 28px)">100%</span></div><div class="track"><div class="bar actual" style="width:88%"></div><span class="bar-value " style="left:calc(88% - 28px)">88%</span></div></div></div><div class="chart-row"><div class="chart-label">Concreto en columnas</div><div class="tracks"><div class="track"><div class="bar" style="width:80%"></div><span class="bar-value " style="left:calc(80% - 28px)">80%</span></div><div class="track"><div class="bar actual" style="width:61%"></div><span class="bar-value " style="left:calc(61% - 28px)">61%</span></div></div></div><div class="chart-row"><div class="chart-label">Concreto en vigas y losas</div><div class="tracks"><div class="track"><div class="bar" style="width:55%"></div><span class="bar-value " style="left:calc(55% - 28px)">55%</span></div><div class="track"><div class="bar actual" style="width:30%"></div><span class="bar-value " style="left:calc(30% - 28px)">30%</span></div></div></div><div class="chart-row"><div class="chart-label">Albanileria</div><div class="tracks"><div class="track"><div class="bar" style="width:30%"></div><span class="bar-value " style="left:calc(30% - 28px)">30%</span></div><div class="track"><div class="bar actual" style="width:12%"></div><span class="bar-value outside" style="left:calc(12% + 6px)">12%</span></div></div></div><div class="chart-row"><div class="chart-label">Instalaciones sanitarias</div><div class="tracks"><div class="track"><div class="bar" style="width:25%"></div><span class="bar-value " style="left:calc(25% - 28px)">25%</span></div><div class="track"><div class="bar actual" style="width:18%"></div><span class="bar-value " style="left:calc(18% - 28px)">18%</span></div></div></div><div class="chart-row"><div class="chart-label">Instalaciones electricas</div><div class="tracks"><div class="track"><div class="bar" style="width:25%"></div><span class="bar-value " style="left:calc(25% - 28px)">25%</span></div><div class="track"><div class="bar actual" style="width:9%"></div><span class="bar-value outside" style="left:calc(9% + 6px)">9%</span></div></div></div></div></div>
-      </article>
-    </section>
-    <footer>Brecha = avance programado − avance ejecutado</footer>
-  </main>
-  <script>
-    const data = [
-      {name:'Obras provisionales', planned:100, actual:100},
-      {name:'Movimiento de tierras', planned:100, actual:96},
-      {name:'Concreto en zapatas', planned:100, actual:88},
-      {name:'Concreto en columnas', planned:80, actual:61},
-      {name:'Concreto en vigas y losas', planned:55, actual:30},
-      {name:'Albanileria', planned:30, actual:12},
-      {name:'Instalaciones sanitarias', planned:25, actual:18},
-      {name:'Instalaciones electricas', planned:25, actual:9}
-    ];
-    const average = key => data.reduce((sum,item)=>sum+item[key],0)/data.length;
-    const fmt = value => `${value.toFixed(1)}<small>%</small>`;
-    const plannedAvg=average('planned'), actualAvg=average('actual');
-    document.getElementById('plannedTotal').innerHTML=fmt(plannedAvg);
-    document.getElementById('actualTotal').innerHTML=fmt(actualAvg);
-    document.getElementById('gapTotal').innerHTML=`${(plannedAvg-actualAvg).toFixed(1)}<small> pp</small>`;
-    const tableBody=document.getElementById('tableBody'), chartRows=document.getElementById('chartRows'), rowCount=document.getElementById('rowCount');
-    const statusClass=gap=>gap>20?'critical':gap>10?'warning':'';
-    function valueLabel(v){return `<span class="bar-value ${v<16?'outside':''}" style="left:${v<16?`calc(${v}% + 6px)`:`calc(${v}% - 28px)`}">${v}%</span>`}
-    function render(filter='all'){
-      const rows=data.filter(item=>filter==='all'||(item.planned-item.actual)>10);
-      rowCount.textContent=`${rows.length} ${rows.length===1?'partida':'partidas'}`;
-      tableBody.innerHTML=rows.map(item=>{const gap=item.planned-item.actual;return `<tr class="${statusClass(gap)}"><td class="item-name">${item.name}</td><td><div class="progress" aria-label="${item.actual}% ejecutado"><div class="progress-fill" style="width:${item.actual}%"></div></div></td><td class="num">${item.planned}%</td><td class="num"><strong>${item.actual}%</strong></td><td class="num"><span class="gap-label">${gap} pp</span></td></tr>`}).join('');
-      chartRows.innerHTML=rows.length?rows.map(item=>`<div class="chart-row"><div class="chart-label">${item.name}</div><div class="tracks"><div class="track"><div class="bar" style="width:${item.planned}%"></div>${valueLabel(item.planned)}</div><div class="track"><div class="bar actual" style="width:${item.actual}%"></div>${valueLabel(item.actual)}</div></div></div>`).join(''):'<div class="empty">No hay partidas atrasadas.</div>';
-    }
-    document.querySelectorAll('[data-filter]').forEach(button=>button.addEventListener('click',()=>{document.querySelectorAll('[data-filter]').forEach(b=>{b.classList.toggle('active',b===button);b.setAttribute('aria-pressed',b===button)});render(button.dataset.filter)}));
-    render();
-  </script>
+<main class="app">
 
-</body></html>
+  <header class="top">
+    <div>
+      <div class="eyebrow">Tablero semanal de avance · Semana 14</div>
+      <h1>Centro de Salud San Marcos</h1>
+      <div class="meta">
+        <span class="chip">Contrato <b>018-2026-MDSM</b></span>
+        <span class="chip">Inicio <b>05/05/2026</b></span>
+        <span class="chip">Corte <b>04/08/2026</b></span>
+        <span class="chip">Plazo <b>180 días calendario</b></span>
+        <span class="chip">Ejecución <b id="chipDia">—</b></span>
+        <span class="chip">Fin contractual <b>01/11/2026</b></span>
+      </div>
+    </div>
+    <div class="semaforo" id="semaforo">
+      <div class="luz"></div>
+      <div>
+        <div class="est" id="semEstado">—</div>
+        <div class="por" id="semPorque">—</div>
+      </div>
+    </div>
+  </header>
+
+  <nav class="filters" aria-label="Filtros de partidas">
+    <button class="filter active" data-filter="all">Todas las partidas</button>
+    <button class="filter" data-filter="delayed">Atrasadas &gt; 10 pp</button>
+    <button class="filter" data-filter="critical">Ruta crítica</button>
+    <button class="filter" data-filter="pending">Sin iniciar programación</button>
+    <span class="filter-note" id="filterNote"></span>
+  </nav>
+
+  <section class="cards" aria-label="Indicadores principales">
+    <article class="card"><div class="label">Avance programado</div><div class="value" id="kPlan">—</div><div class="detail">Ponderado por monto contractual</div></article>
+    <article class="card"><div class="label">Avance ejecutado</div><div class="value" id="kAct">—</div><div class="detail">Ponderado por monto contractual</div></article>
+    <article class="card bad"><div class="label">Atraso acumulado</div><div class="value" id="kAtraso">—</div><div class="detail" id="kAtrasoD">—</div></article>
+    <article class="card good"><div class="label">Adelanto registrado</div><div class="value" id="kAdel">—</div><div class="detail" id="kAdelD">—</div></article>
+    <article class="card"><div class="label">Valorizado acumulado</div><div class="value" id="kVal">—</div><div class="detail" id="kValD">—</div></article>
+    <article class="card"><div class="label">Término proyectado</div><div class="value" id="kFin">—</div><div class="detail" id="kFinD">—</div></article>
+  </section>
+
+  <article class="panel">
+    <div class="panel-head">
+      <div class="panel-title">Control por partida</div>
+      <div class="panel-sub" id="rowCount"></div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr>
+          <th>Partida</th><th>Und.</th>
+          <th class="num">Metrado ejec. / contr.</th>
+          <th class="num">Avance ejec.</th><th class="num">Programado</th>
+          <th class="num">Brecha</th><th class="num">Atraso</th>
+          <th class="num">Término proyectado</th>
+          <th class="num">Valorizado</th>
+          <th>Responsable</th><th>Causa del atraso</th>
+        </tr></thead>
+        <tbody id="rows"></tbody>
+        <tfoot id="foot"></tfoot>
+      </table>
+      <div class="empty" id="empty" hidden>No hay partidas para este filtro.</div>
+    </div>
+  </article>
+
+  <section class="grid3">
+    <article class="panel">
+      <div class="panel-head"><div class="panel-title">Curva S acumulada</div><div class="panel-sub">% ponderado por monto</div></div>
+      <div class="box">
+        <div class="legend">
+          <span class="key"><i class="swatch"></i>Programado</span>
+          <span class="key"><i class="swatch act"></i>Ejecutado</span>
+          <span class="key"><i class="swatch pry"></i>Proyectado al ritmo real</span>
+        </div>
+        <svg id="chart" viewBox="0 0 620 330" role="img" aria-label="Curva S de avance acumulado"></svg>
+        <div class="note"><b>Cómo se construye.</b> El ejecutado se reconstruye asumiendo ritmo constante de cada partida entre su inicio y el corte, porque no se cargó el histórico semanal de metrados. El punto de la semana 14 sí es dato medido.</div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head"><div class="panel-title">Partidas que más pesan</div><div class="panel-sub">brecha × monto</div></div>
+      <div class="box">
+        <div class="imp" id="impacto"></div>
+        <div class="note"><b>Cómo se ordena.</b> Brecha positiva multiplicada por el monto contractual de la partida. Mide soles de obra que debieron estar ejecutados al corte y no lo están, no porcentaje suelto.</div>
+      </div>
+    </article>
+
+    <article class="panel">
+      <div class="panel-head"><div class="panel-title">Valorización y plazo</div><div class="panel-sub">al 04/08/2026</div></div>
+      <div class="box">
+        <div class="kv"><span>Monto contractual</span><b id="vTot">—</b></div>
+        <div class="kv"><span>Valorizado acumulado</span><b class="grn" id="vAcum">—</b></div>
+        <div class="kv"><span>Pendiente por valorizar</span><b id="vPend">—</b></div>
+        <div class="progress"><i id="vBar" style="width:0"></i></div>
+        <div class="panel-sub" id="vPct">—</div>
+        <div class="kv" style="margin-top:12px"><span>Fin contractual</span><b>01/11/2026</b></div>
+        <div class="kv"><span>Fin proyectado</span><b class="red" id="pFin">—</b></div>
+        <div class="kv"><span>Atraso mayor en ruta crítica</span><b class="red" id="pCrit">—</b></div>
+        <div class="note warn"><b>Lo que este tablero no puede responder.</b> <span id="vNota">—</span></div>
+      </div>
+    </article>
+  </section>
+
+</main>
+
+<script>
+/* ---------- utilidades ---------- */
+const D=s=>{const p=s.split('/').map(Number);return new Date(Date.UTC(p[2],p[1]-1,p[0]))};
+const DIA=86400000;
+const dif=(a,b)=>Math.round((b-a)/DIA);
+const suma=(f,n)=>new Date(f.getTime()+Math.round(n)*DIA);
+const fmtF=f=>String(f.getUTCDate()).padStart(2,'0')+'/'+String(f.getUTCMonth()+1).padStart(2,'0')+'/'+f.getUTCFullYear();
+const nf=n=>new Intl.NumberFormat('es-PE',{minimumFractionDigits:1,maximumFractionDigits:1}).format(n);
+const pct=n=>nf(n*100)+'%';
+const pp=n=>nf(n*100)+' pp';
+const sol=n=>'S/ '+new Intl.NumberFormat('es-PE',{maximumFractionDigits:0}).format(n);
+const solD=n=>'S/ '+new Intl.NumberFormat('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2}).format(n);
+const qty=n=>new Intl.NumberFormat('es-PE',{maximumFractionDigits:1}).format(n);
+
+/* ---------- parametros de obra ---------- */
+const CORTE=D('04/08/2026'), INICIO=D('05/05/2026'), FIN_CONTR=D('01/11/2026'), PLAZO=180;
+const UMBRAL_RIESGO=.10, UMBRAL_CRITICO=.20;
+const MIN_DIAS_PROY=14, MIN_AVANCE_PROY=.05;
+
+/* ---------- partidas ---------- */
+const crudo=[
+ ['Obras provisionales','glb',1,1,48500,'05/05/2026','20/05/2026','Residencia',false,'ninguna'],
+ ['Movimiento de tierras','m3',4820,4627,38.9,'18/05/2026','12/06/2026','Producción',false,'lluvias en la primera quincena'],
+ ['Concreto en zapatas','m3',386.5,340.1,412.6,'08/06/2026','04/07/2026','Producción',true,'demora del segundo lote de acero'],
+ ['Concreto en columnas','m3',214.8,131,468.2,'28/06/2026','08/08/2026','Producción',true,'rendimiento de encofrado bajo lo previsto'],
+ ['Concreto en vigas y losas','m3',512.3,153.7,445.8,'20/07/2026','12/09/2026','Producción',true,'depende del avance de columnas'],
+ ['Albañilería','m2',3140,376.8,62.4,'10/08/2026','30/09/2026','Producción',false,'cuadrilla adelantada, la partida aún no entra en ventana'],
+ ['Instalaciones sanitarias','glb',1,.18,186400,'01/08/2026','15/10/2026','Subcontrata',false,'subcontratista con dos frentes en paralelo'],
+ ['Instalaciones eléctricas','glb',1,.09,214900,'01/08/2026','20/10/2026','Subcontrata',false,'falta aprobación de planos de detalle']
+];
+
+function programadoA(fecha,ini,fin){
+  if(fecha<=ini) return 0;
+  if(fecha>=fin) return 1;
+  return (fecha-ini)/(fin-ini);
+}
+
+const P=crudo.map(function(d,i){
+  const ini=D(d[5]), fin=D(d[6]);
+  const durac=Math.max(1,dif(ini,fin));
+  const ejec=d[3]/d[2];
+  const prog=programadoA(CORTE,ini,fin);
+  const noProgramada = CORTE < ini;                    /* fuera de su ventana al corte */
+  const vencida = (CORTE > fin) && ejec < 1;           /* debió terminar y no terminó */
+  const brecha = noProgramada ? null : prog-ejec;
+  const transcurridos = Math.max(0,dif(ini,CORTE));
+
+  let proy, motivoProy;
+  if(ejec>=1){ proy=fin; motivoProy='terminada'; }
+  else if(noProgramada){ proy=fin; motivoProy='aún no inicia su ventana'; }
+  else if(transcurridos<MIN_DIAS_PROY||ejec<MIN_AVANCE_PROY){ proy=fin; motivoProy='datos insuficientes, se usa el contractual'; }
+  else{
+    const ritmo=d[3]/transcurridos;
+    proy=suma(CORTE,(d[2]-d[3])/ritmo);
+    motivoProy='ritmo real al corte';
+  }
+
+  return{
+    id:i,nombre:d[0],und:d[1],qContr:d[2],qEjec:d[3],pu:d[4],ini:ini,fin:fin,resp:d[7],critica:d[8],causa:d[9],
+    durac:durac,ejec:ejec,prog:prog,brecha:brecha,noProgramada:noProgramada,vencida:vencida,transcurridos:transcurridos,
+    /* si la ventana ya venció, el atraso son los días corridos desde el fin programado;
+       si sigue vigente, es la brecha proyectada sobre la duración de la partida */
+    atrasoDias: vencida ? dif(fin,CORTE) : ((brecha!==null&&brecha>0)?Math.round(brecha*durac):0),
+    proy:proy,motivoProy:motivoProy,desvio:dif(fin,proy),
+    vContr:d[2]*d[4], vEjec:d[3]*d[4]
+  };
+});
+
+const V_TOTAL=P.reduce(function(a,p){return a+p.vContr},0);
+P.forEach(function(p){p.peso=p.vContr/V_TOTAL});
+
+/* ---------- agregados ---------- */
+function agregado(lista){
+  const w=lista.reduce(function(a,p){return a+p.vContr},0)||1;
+  let prog=0,ejec=0,atraso=0,adelanto=0,anticipado=0;
+  lista.forEach(function(p){
+    const k=p.vContr/w;
+    prog+=k*p.prog; ejec+=k*p.ejec;
+    if(p.noProgramada){ anticipado+=k*p.ejec; return; }
+    if(p.brecha>0) atraso+=k*p.brecha; else adelanto+=k*(-p.brecha);
+  });
+  return{prog:prog,ejec:ejec,atraso:atraso,adelanto:adelanto,anticipado:anticipado,neta:prog-ejec,
+    vContr:w, vEjec:lista.reduce(function(a,p){return a+p.vEjec},0)};
+}
+
+const TODO=agregado(P);
+const CRIT=agregado(P.filter(function(p){return p.critica}));
+const FIN_PROY=P.reduce(function(m,p){return p.proy>m?p.proy:m},P[0].proy);
+const CRITICAS=P.filter(function(p){return p.critica});
+const CRIT_PEOR=CRITICAS.reduce(function(a,b){return b.desvio>a.desvio?b:a});
+const CRIT_BRECHA=CRITICAS.filter(function(p){return p.brecha!==null})
+                          .reduce(function(a,b){return b.brecha>a.brecha?b:a});
+
+/* ---------- semaforo ---------- */
+function semaforo(){
+  const peor=CRIT_BRECHA.brecha;
+  if(CRIT.atraso>UMBRAL_CRITICO||peor>UMBRAL_CRITICO)
+    return{clase:'',estado:'OBRA EN ESTADO CRÍTICO',
+      por:'«'+CRIT_BRECHA.nombre+'» va '+pp(peor)+' por debajo de lo programado y está en la ruta crítica. La ruta crítica completa acumula '+pp(CRIT.atraso)+'.'};
+  if(CRIT.atraso>UMBRAL_RIESGO||peor>UMBRAL_RIESGO)
+    return{clase:'riesgo',estado:'OBRA EN RIESGO',
+      por:'La ruta crítica acumula '+pp(CRIT.atraso)+'. Máximo por partida: '+pp(peor)+' en «'+CRIT_BRECHA.nombre+'».'};
+  return{clase:'plazo',estado:'OBRA EN PLAZO',
+    por:'La ruta crítica acumula '+pp(CRIT.atraso)+', dentro del umbral de '+pp(UMBRAL_RIESGO)+'.'};
+}
+
+/* ---------- render ---------- */
+let filtro='all';
+document.querySelectorAll('.filter').forEach(function(b){
+  b.addEventListener('click',function(){
+    document.querySelector('.filter.active').classList.remove('active');
+    b.classList.add('active'); filtro=b.dataset.filter; render();
+  });
+});
+
+function filtrar(){
+  if(filtro==='delayed') return P.filter(function(p){return p.brecha!==null&&p.brecha>UMBRAL_RIESGO});
+  if(filtro==='critical') return P.filter(function(p){return p.critica});
+  if(filtro==='pending')  return P.filter(function(p){return p.noProgramada});
+  return P;
+}
+
+function celdaBrecha(p){
+  if(p.noProgramada) return '<td class="num"><span class="dash">—</span><div class="sub">no programada aún</div></td>';
+  if(Math.abs(p.brecha)<.0005) return '<td class="num"><span class="zero">'+pp(0)+'</span></td>';
+  if(p.brecha>0) return '<td class="num"><span class="pos">+'+pp(p.brecha)+'</span><div class="sub">por debajo</div></td>';
+  return '<td class="num"><span class="neg">'+pp(p.brecha)+'</span><div class="sub">por encima</div></td>';
+}
+function celdaProy(p){
+  if(p.ejec>=1) return '<td class="num"><span class="big">'+fmtF(p.fin)+'</span><div class="sub">terminada</div></td>';
+  if(p.motivoProy!=='ritmo real al corte')
+    return '<td class="num"><span class="dash">'+fmtF(p.fin)+'</span><div class="sub">'+p.motivoProy+'</div></td>';
+  const cl=p.desvio>0?'pos':(p.desvio<0?'neg':'zero');
+  const tx=p.desvio>0?('+'+p.desvio+' días'):(p.desvio<0?(p.desvio+' días'):'en fecha');
+  return '<td class="num"><span class="big">'+fmtF(p.proy)+'</span><div class="sub '+cl+'">'+tx+' vs contractual</div></td>';
+}
+
+function render(){
+  const lista=filtrar();
+  const A=agregado(lista.length?lista:P);
+  const S=semaforo();
+
+  const sem=document.getElementById('semaforo');
+  sem.className='semaforo '+S.clase;
+  document.getElementById('semEstado').textContent=S.estado;
+  document.getElementById('semPorque').textContent=S.por;
+  document.getElementById('chipDia').textContent='día '+(dif(INICIO,CORTE)+1)+' de '+PLAZO;
+
+  document.getElementById('kPlan').textContent=pct(A.prog);
+  document.getElementById('kAct').textContent=pct(A.ejec);
+  const signo=(v,s)=>(v<.00005?'':s)+pp(v);
+  document.getElementById('kAtraso').textContent=signo(A.atraso,'+');
+  document.getElementById('kAtrasoD').textContent='Suma ponderada de brechas positivas. Los adelantos no la reducen.';
+  document.getElementById('kAdel').textContent=signo(A.adelanto,'−');
+  document.getElementById('kAdelD').textContent = A.anticipado>0
+    ? 'Y '+pp(A.anticipado)+' ejecutado antes de su ventana, fuera del cálculo'
+    : 'Partidas por encima de lo programado al corte';
+  document.getElementById('kVal').textContent=sol(A.vEjec);
+  document.getElementById('kValD').textContent=pct(A.vEjec/A.vContr)+' del monto contractual del filtro';
+  document.getElementById('kFin').textContent=fmtF(FIN_PROY);
+  const desvObra=dif(FIN_CONTR,FIN_PROY);
+  document.getElementById('kFinD').textContent = (desvObra>0
+    ? desvObra+' días después del fin contractual. '
+    : Math.abs(desvObra)+' días antes del fin contractual. ')
+    + 'Cada partida por separado: no arrastra el atraso a las sucesoras.';
+
+  const tb=document.getElementById('rows'); tb.innerHTML='';
+  lista.forEach(function(p){
+    const tr=document.createElement('tr');
+    if(p.noProgramada) tr.className='pend';
+    else if(p.brecha>UMBRAL_CRITICO) tr.className='red';
+    else if(p.brecha>UMBRAL_RIESGO) tr.className='amber';
+    const barCl=p.noProgramada?'espera':(p.brecha>UMBRAL_CRITICO?'crit':(p.brecha>UMBRAL_RIESGO?'late':''));
+    tr.innerHTML=
+      '<td class="name">'+p.nombre+
+        (p.critica?'<div><span class="tag crit">RUTA CRÍTICA</span></div>':'')+
+        (p.noProgramada?'<div><span class="tag espera">INICIA '+fmtF(p.ini)+'</span></div>':'')+'</td>'+
+      '<td>'+p.und+'</td>'+
+      '<td class="num"><span class="big">'+qty(p.qEjec)+'</span> <span class="sub" style="display:inline">/ '+qty(p.qContr)+'</span>'+
+        '<div class="bar"><i class="'+barCl+'" style="width:'+(Math.min(1,p.ejec)*100).toFixed(1)+'%"></i></div></td>'+
+      '<td class="num"><span class="big">'+pct(p.ejec)+'</span></td>'+
+      '<td class="num">'+(p.noProgramada
+          ? '<span class="dash">'+pct(0)+'</span><div class="sub">inicia '+fmtF(p.ini)+'</div>'
+          : pct(p.prog))+'</td>'+
+      celdaBrecha(p)+
+      '<td class="num">'+(p.atrasoDias>0
+          ? '<span class="pos">'+p.atrasoDias+' d</span><div class="sub">'+(p.vencida?'ventana vencida':'sobre su duración')+'</div>'
+          : '<span class="dash">—</span>')+'</td>'+
+      celdaProy(p)+
+      '<td class="num"><span class="big">'+sol(p.vEjec)+'</span><div class="sub">de '+sol(p.vContr)+'</div></td>'+
+      '<td>'+p.resp+'</td>'+
+      '<td class="cause">'+p.causa+'</td>';
+    tb.appendChild(tr);
+  });
+
+  if(lista.length){
+    const finFiltro=lista.reduce(function(m,p){return p.proy>m?p.proy:m},lista[0].proy);
+    const diasFiltro=lista.reduce(function(a,p){return a+p.atrasoDias},0);
+    document.getElementById('foot').innerHTML=
+      '<tr><td colspan="3">TOTAL · '+lista.length+' partida'+(lista.length>1?'s':'')+
+        '<div class="sub">Ponderado por monto contractual</div></td>'+
+      '<td class="num">'+pct(A.ejec)+'</td><td class="num">'+pct(A.prog)+'</td>'+
+      '<td class="num">'+(A.atraso<.00005
+          ? '<span class="zero">'+pp(0)+'</span>'
+          : '<span class="pos">+'+pp(A.atraso)+'</span><div class="sub">atraso, sin compensar</div>')+'</td>'+
+      '<td class="num">'+diasFiltro+' d</td>'+
+      '<td class="num">'+fmtF(finFiltro)+'<div class="sub">más tardío del filtro</div></td>'+
+      '<td class="num">'+sol(A.vEjec)+'<div class="sub">de '+sol(A.vContr)+'</div></td>'+
+      '<td colspan="2"></td></tr>';
+  } else { document.getElementById('foot').innerHTML=''; }
+
+  document.getElementById('empty').hidden=lista.length>0;
+  document.getElementById('rowCount').textContent=lista.length+' de '+P.length+' partidas · '+sol(A.vContr)+' contractuales';
+  document.getElementById('filterNote').textContent = filtro==='all'
+    ? 'Umbrales: ámbar sobre '+pp(UMBRAL_RIESGO)+', rojo sobre '+pp(UMBRAL_CRITICO)+'.'
+    : 'Las tarjetas y el total recalculan solo con las partidas visibles.';
+
+  impacto(lista); valorizacion(); curva();
+}
+
+/* ---------- partidas que mas pesan ---------- */
+function impacto(lista){
+  const top=lista.filter(function(p){return p.brecha!==null&&p.brecha>0})
+    .map(function(p){return{nombre:p.nombre,brecha:p.brecha,vContr:p.vContr,critica:p.critica,soles:p.brecha*p.vContr}})
+    .sort(function(a,b){return b.soles-a.soles}).slice(0,3);
+  const cont=document.getElementById('impacto');
+  if(!top.length){ cont.innerHTML='<div class="panel-sub">Ninguna partida del filtro presenta brecha positiva.</div>'; return; }
+  const max=top[0].soles;
+  cont.innerHTML=top.map(function(p,i){
+    return '<div class="imp-row"><div class="imp-top"><div>'+
+      '<div class="n">'+(i+1)+'. '+p.nombre+'</div>'+
+      '<div class="s">'+pp(p.brecha)+' sobre '+sol(p.vContr)+(p.critica?' · ruta crítica':'')+'</div>'+
+      '</div><div class="v">'+sol(p.soles)+'</div></div>'+
+      '<div class="imp-bar"><i style="width:'+(p.soles/max*100).toFixed(1)+'%"></i></div></div>';
+  }).join('');
+}
+
+/* ---------- valorizacion ---------- */
+function valorizacion(){
+  const acum=P.reduce(function(a,p){return a+p.vEjec},0);
+  document.getElementById('vTot').textContent=solD(V_TOTAL);
+  document.getElementById('vAcum').textContent=solD(acum);
+  document.getElementById('vPend').textContent=solD(V_TOTAL-acum);
+  document.getElementById('vBar').style.width=(acum/V_TOTAL*100).toFixed(1)+'%';
+  document.getElementById('vPct').textContent=pct(acum/V_TOTAL)+' del contrato valorizado al corte';
+  document.getElementById('pFin').textContent=fmtF(FIN_PROY);
+  document.getElementById('pCrit').textContent='+'+CRIT_PEOR.desvio+' días · '+CRIT_PEOR.nombre;
+  document.getElementById('vNota').textContent=
+    'La valorización del mes no se puede separar del acumulado: falta el metrado del corte anterior. '+
+    'Y el término proyectado no arrastra el atraso hacia las partidas sucesoras, así que «'+CRIT_PEOR.nombre+
+    '», con +'+CRIT_PEOR.desvio+' días, empujaría columnas y losas más allá de lo que muestra la columna.';
+}
+
+/* ---------- curva S ---------- */
+function curva(){
+  const W=620,H=330,ml=44,mr=16,mt=16,mb=40;
+  const x0=ml,x1=W-mr,y0=H-mb,y1=mt;
+  const ini=INICIO, fin=P.reduce(function(m,p){return p.fin>m?p.fin:m},P[0].fin);
+  const total=dif(ini,fin);
+  const px=function(f){return x0+(dif(ini,f)/total)*(x1-x0)};
+  const py=function(v){return y0-v*(y0-y1)};
+
+  const progA=function(f){return P.reduce(function(a,p){return a+p.peso*programadoA(f,p.ini,p.fin)},0)};
+  const ejecA=function(f){return P.reduce(function(a,p){
+    if(f<=p.ini) return a;
+    const t=p.transcurridos||1;
+    return a+p.peso*p.ejec*Math.min(1,dif(p.ini,f)/t);
+  },0)};
+  const proyA=function(f){return P.reduce(function(a,p){
+    if(f<=p.ini) return a;
+    if(f<=CORTE){ const t=p.transcurridos||1; return a+p.peso*p.ejec*Math.min(1,dif(p.ini,f)/t); }
+    if(p.proy<=CORTE) return a+p.peso*p.ejec;
+    const av=p.ejec+(1-p.ejec)*Math.min(1,dif(CORTE,f)/Math.max(1,dif(CORTE,p.proy)));
+    return a+p.peso*Math.min(1,av);
+  },0)};
+
+  const pasos=[]; for(let d=0;d<=total;d+=7) pasos.push(suma(ini,d));
+  if(dif(ini,pasos[pasos.length-1])<total) pasos.push(fin);
+  const trazo=function(fn,arr){return arr.map(function(f,i){return (i?'L':'M')+px(f).toFixed(1)+' '+py(fn(f)).toFixed(1)}).join(' ')};
+  const hastaCorte=pasos.filter(function(f){return f<=CORTE}).concat([CORTE]);
+  const desdeCorte=[CORTE].concat(pasos.filter(function(f){return f>CORTE}));
+
+  let g='';
+  for(let v=0;v<=1.0001;v+=.25){
+    g+='<line class="grid-l" x1="'+x0+'" y1="'+py(v).toFixed(1)+'" x2="'+x1+'" y2="'+py(v).toFixed(1)+'"/>'
+     + '<text class="st" x="'+(x0-8)+'" y="'+(py(v)+4).toFixed(1)+'" text-anchor="end">'+Math.round(v*100)+'%</text>';
+  }
+  const NM=['ene','feb','mar','abr','may','jun','jul','ago','set','oct','nov','dic'];
+  let cur=new Date(Date.UTC(ini.getUTCFullYear(),ini.getUTCMonth()+1,1));
+  while(cur<fin){
+    g+='<text class="st" x="'+px(cur).toFixed(1)+'" y="'+(y0+18)+'" text-anchor="middle">'+NM[cur.getUTCMonth()]+'</text>';
+    cur=new Date(Date.UTC(cur.getUTCFullYear(),cur.getUTCMonth()+1,1));
+  }
+  g+='<line class="axis" x1="'+x0+'" y1="'+y0+'" x2="'+x1+'" y2="'+y0+'"/>';
+  g+='<line class="cutline" x1="'+px(CORTE).toFixed(1)+'" y1="'+y1+'" x2="'+px(CORTE).toFixed(1)+'" y2="'+y0+'"/>';
+  g+='<text class="st b" x="'+(px(CORTE)+6).toFixed(1)+'" y="'+(y1+11)+'">corte 04/08</text>';
+  g+='<path class="l-plan" d="'+trazo(progA,pasos)+'"/>';
+  g+='<path class="l-pry" d="'+trazo(proyA,desdeCorte)+'"/>';
+  g+='<path class="l-act" d="'+trazo(ejecA,hastaCorte)+'"/>';
+  const cx=px(CORTE),cyA=py(TODO.ejec),cyP=py(TODO.prog);
+  /* callout con fondo: al corte las dos series casi coinciden y las etiquetas sueltas
+     se montaban sobre el trazo */
+  const bw=94,bh=38,bx=cx-bw-22,by=Math.min(cyA,cyP)-bh-26;
+  g+='<line class="grid-l" x1="'+(bx+bw).toFixed(1)+'" y1="'+(by+bh/2).toFixed(1)+'" x2="'+(cx-7).toFixed(1)+'" y2="'+((cyA+cyP)/2).toFixed(1)+'" stroke="#c3d0cc"/>';
+  g+='<rect x="'+bx.toFixed(1)+'" y="'+by.toFixed(1)+'" width="'+bw+'" height="'+bh+'" rx="6" fill="#fff" stroke="#dde7e4"/>';
+  g+='<text class="st b" x="'+(bx+bw-9)+'" y="'+(by+16)+'" text-anchor="end" fill="#087f5b">ejec. '+pct(TODO.ejec)+'</text>';
+  g+='<text class="st" x="'+(bx+bw-9)+'" y="'+(by+30)+'" text-anchor="end">prog. '+pct(TODO.prog)+'</text>';
+  g+='<circle cx="'+cx.toFixed(1)+'" cy="'+cyP.toFixed(1)+'" r="4.5" fill="#5a6b74" stroke="#fff" stroke-width="2"/>';
+  g+='<circle cx="'+cx.toFixed(1)+'" cy="'+cyA.toFixed(1)+'" r="5.5" fill="#087f5b" stroke="#fff" stroke-width="2"/>';
+  document.getElementById('chart').innerHTML=g;
+}
+
+render();
+</script>
+</body>
+</html>
