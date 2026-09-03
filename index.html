@@ -89,7 +89,7 @@
     const statusClass=gap=>gap>20?'critical':gap>10?'warning':'';
     function valueLabel(v){return `<span class="bar-value ${v<16?'outside':''}" style="left:${v<16?`calc(${v}% + 6px)`:`calc(${v}% - 28px)`}">${v}%</span>`}
     function render(filter='all'){
-      const rows=data.filter(item=>filter==='all'||item.actual<item.planned);
+      const rows=data.filter(item=>filter==='all'||(item.planned-item.actual)>10);
       rowCount.textContent=`${rows.length} ${rows.length===1?'partida':'partidas'}`;
       tableBody.innerHTML=rows.map(item=>{const gap=item.planned-item.actual;return `<tr class="${statusClass(gap)}"><td class="item-name">${item.name}</td><td><div class="progress" aria-label="${item.actual}% ejecutado"><div class="progress-fill" style="width:${item.actual}%"></div></div></td><td class="num">${item.planned}%</td><td class="num"><strong>${item.actual}%</strong></td><td class="num"><span class="gap-label">${gap} pp</span></td></tr>`}).join('');
       chartRows.innerHTML=rows.length?rows.map(item=>`<div class="chart-row"><div class="chart-label">${item.name}</div><div class="tracks"><div class="track"><div class="bar" style="width:${item.planned}%"></div>${valueLabel(item.planned)}</div><div class="track"><div class="bar actual" style="width:${item.actual}%"></div>${valueLabel(item.actual)}</div></div></div>`).join(''):'<div class="empty">No hay partidas atrasadas.</div>';
